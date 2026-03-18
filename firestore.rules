@@ -1,0 +1,33 @@
+// firestore.rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Users ────────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      // Anyone authenticated can read (for friend lookup by email)
+      allow read: if request.auth != null;
+
+      // Only the owner can write their own profile
+      allow write: if request.auth != null && request.auth.uid == userId;
+
+      // Friend requests: authenticated users can add their UID to pendingFriendRequests
+      allow update: if request.auth != null &&
+        request.resource.data.keys().hasOnly(['pendingFriendRequests']) &&
+        request.resource.data.pendingFriendRequests.hasAll(resource.data.pendingFriendRequests);
+
+      // ─── Cipher Tables (sub-collection) ──────────────────────────────────
+      match /cipherTables/{tableId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // ─── Shared Ciphers (sub-collection) ─────────────────────────────────
+      match /sharedCiphers/{sharerId} {
+        // Owner can read their received ciphers
+        allow read: if request.auth != null && request.auth.uid == userId;
+        // Only the sharer can write (they share to the friend's collection)
+        allow write: if request.auth != null && request.auth.uid == sharerId;
+      }
+    }
+  }
+}
