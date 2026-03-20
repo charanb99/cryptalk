@@ -1,0 +1,64 @@
+workflows:
+  android-workflow:
+    name: CryptTalk Android Build
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      android_signing:
+        - keystore_reference
+    scripts:
+      - name: Fix folder structure
+        script: |
+          mkdir -p lib/models
+          mkdir -p lib/services
+          mkdir -p lib/screens
+          mkdir -p lib/theme
+          mkdir -p lib/widgets
+
+          # Move models
+          mv models.dart lib/models/models.dart || true
+
+          # Move services
+          mv auth_service.dart lib/services/auth_service.dart || true
+          mv firestore_service.dart lib/services/firestore_service.dart || true
+          mv ai_service.dart lib/services/ai_service.dart || true
+          mv app_state.dart lib/services/app_state.dart || true
+
+          # Move theme
+          mv app_theme.dart lib/theme/app_theme.dart || true
+
+          # Move widgets
+          mv widgets.dart lib/widgets/widgets.dart || true
+
+          # Move screens
+          mv login_screen.dart lib/screens/login_screen.dart || true
+          mv home_screen.dart lib/screens/home_screen.dart || true
+          mv encode_screen.dart lib/screens/encode_screen.dart || true
+          mv decode_screen.dart lib/screens/decode_screen.dart || true
+          mv cipher_table_screen.dart lib/screens/cipher_table_screen.dart || true
+          mv friends_screen.dart lib/screens/friends_screen.dart || true
+          mv profile_screen.dart lib/screens/profile_screen.dart || true
+
+          # Fix firestore.indexes filename if needed
+          mv "firestore.indexes (1).json" firestore.indexes.json || true
+
+          echo "✅ Folder structure fixed!"
+          echo "📁 Current structure:"
+          find . -name "*.dart" | head -30
+
+      - name: Get Flutter packages
+        script: flutter pub get
+
+      - name: Build APK
+        script: flutter build apk --debug --no-tree-shake-icons
+
+    artifacts:
+      - build/app/outputs/flutter-apk/**/*.apk
+
+    publishing:
+      email:
+        recipients:
+          - charanb99@gmail.com
+        notify:
+          success: true
+          failure: true
